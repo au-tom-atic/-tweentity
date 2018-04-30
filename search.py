@@ -8,7 +8,7 @@ auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth)
 
 # gets tweets from timeline
-timeline = api.home_timeline()
+searchResults = api.search('news', 'en', True)
 
-for tweet in timeline:
+for tweet in searchResults:
     print(tweet.text)
