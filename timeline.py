@@ -44,8 +44,8 @@ auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth)
 
-# gets tweets from timeline
-timeline = api.home_timeline()
+# gets at most 50 tweets from account's timeline
+timeline = api.home_timeline(None,None,50)
 
 #analyze each tweet from timeline
 for tweet in timeline:
