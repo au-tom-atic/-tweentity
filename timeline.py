@@ -8,7 +8,11 @@ from google.cloud.language import enums
 from google.cloud.language import types
 
 #needed
+import sys
 import six
+
+#  dictionary; key = entityName : value = [numOfOccurences, runningSentimentTotal]
+entitiesDict = {}
 
 def entity_sentiment_text(text):
     """Detects entity sentiment in the provided text."""
@@ -29,16 +33,11 @@ def entity_sentiment_text(text):
     result = client.analyze_entity_sentiment(document, encoding)
 
     for entity in result.entities:
-        print('Mentions: ')
-        print(u'Name: "{}"'.format(entity.name))
-        for mention in entity.mentions:
-            print(u'  Begin Offset : {}'.format(mention.text.begin_offset))
-            print(u'  Content : {}'.format(mention.text.content))
-            print(u'  Magnitude : {}'.format(mention.sentiment.magnitude))
-            print(u'  Sentiment : {}'.format(mention.sentiment.score))
-            print(u'  Type : {}'.format(mention.type))
-        print(u'Salience: {}'.format(entity.salience))
-        print(u'Sentiment: {}\n'.format(entity.sentiment))
+        if entity.name in entitiesDict:
+            entitiesDict[entity.name][0] += 1
+            entitiesDict[entity.name][1] = (entitiesDict[entity.name][1] + float(entity.sentiment.score))
+        else:
+            entitiesDict[entity.name] = [1, float(entity.sentiment.score)]
 
 # Access and authorize our Twitter credentials from credentials.py
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -51,6 +50,10 @@ timeline = api.home_timeline()
 #analyze each tweet from timeline
 for tweet in timeline:
     entity_sentiment_text(tweet.text)
+
+#find the top mentioned 3 mentioned entities and retweet them w/ sentiment
+#just printing the dictionary rn
+print(entitiesDict)
 
 
 
