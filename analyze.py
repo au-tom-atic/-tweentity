@@ -10,9 +10,16 @@ from google.cloud.language import types
 #needed
 import sys
 import six
+import argparse
 
 #  dictionary; key = entityName : value = [numOfOccurences, runningSentimentTotal]
 entitiesDict = {}
+
+#parse those inputs
+parser = argparse.ArgumentParser()
+parser.add_argument('-s', '--search', help ="search for term(takes one argument)", type=str)
+parser.add_argument('-t', '--timeline', help ="pull from timeline", action ='store_true')
+args = parser.parse_args()
 
 def entity_sentiment_text(text):
     """Detects entity sentiment in the provided text."""
@@ -33,22 +40,28 @@ def entity_sentiment_text(text):
     result = client.analyze_entity_sentiment(document, encoding)
 
     for entity in result.entities:
-        if entity.name in entitiesDict:
-            entitiesDict[entity.name][0] += 1
-            entitiesDict[entity.name][1] = (entitiesDict[entity.name][1] + float(entity.sentiment.score))
-        else:
-            entitiesDict[entity.name] = [1, float(entity.sentiment.score)]
+        #salience measures 'importance' if it Google says something isn't important then ignore it
+        if entity.salience >= 0.5:
+            if entity.name in entitiesDict:
+                entitiesDict[entity.name][0] += 1
+                entitiesDict[entity.name][1] = (entitiesDict[entity.name][1] + entity.sentiment.score)
+            else:
+                entitiesDict[entity.name] = [1, entity.sentiment.score]
 
 # Access and authorize our Twitter credentials from credentials.py
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth)
 
-# gets at most 50 tweets from account's timeline
-timeline = api.home_timeline(None,None,50)
+# did we wanna search or use the timeline?
+if args.timeline:
+    # gets at most 150 tweets from account's timeline
+    tweets = api.home_timeline(None,None,150)
+else:
+    tweets = api.search(args.search, 'en', True)
 
 #analyze each tweet from timeline
-for tweet in timeline:
+for tweet in tweets:
     entity_sentiment_text(tweet.text)
 
 #find the top mentioned 3 mentioned entities and retweet them w/ sentiment
