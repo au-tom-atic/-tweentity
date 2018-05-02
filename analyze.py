@@ -1,4 +1,4 @@
-# Import our Twitter credentials from credentials.py
+# Import our Twitter credentials from credentials.py and tweepy
 import tweepy
 from credentials import *
 
@@ -7,20 +7,12 @@ from google.cloud import language
 from google.cloud.language import enums
 from google.cloud.language import types
 
-#needed
+#import other stuff
 import sys
 import six
 import argparse
 
-#  dictionary; key = entityName : value = [numOfOccurences, runningSentimentTotal]
-entitiesDict = {}
-
-#parse those inputs
-parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--search', help ="search for term(takes one argument)", type=str)
-parser.add_argument('-t', '--timeline', help ="pull from timeline", action ='store_true')
-args = parser.parse_args()
-
+"""Function decleration"""
 def entity_sentiment_text(text):
     """Detects entity sentiment in the provided text."""
     client = language.LanguageServiceClient()
@@ -41,26 +33,43 @@ def entity_sentiment_text(text):
 
     for entity in result.entities:
         #salience measures 'importance' if it Google says something isn't important then ignore it
-        if entity.salience >= 0.5:
+        if entity.salience >= 0.3:
             if entity.name in entitiesDict:
                 entitiesDict[entity.name][0] += 1
                 entitiesDict[entity.name][1] = (entitiesDict[entity.name][1] + entity.sentiment.score)
             else:
                 entitiesDict[entity.name] = [1, entity.sentiment.score]
 
+#  dictionary; key = entityName : value = [numOfOccurences, runningSentimentTotal]
+entitiesDict = {}
+
+#parse those inputs
+parser = argparse.ArgumentParser()
+parser.add_argument('-q', '--query', help ="search for tweets matching a query", action = 'store_true')
+parser.add_argument('-t', '--timeline', help ="pull tweets from @comp469 timeline", action ='store_true')
+parser.add_argument('-o', '--othertimeline', help ="pull tweets from specified timeline", action ='store_true')
+args = parser.parse_args()
+
 # Access and authorize our Twitter credentials from credentials.py
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth)
 
-# did we wanna search or use the timeline?
-if args.timeline:
-    # gets at most 150 tweets from account's timeline
-    tweets = api.home_timeline(None,None,150)
+# user timeline/search/default timeline(@comp469)
+if args.othertimeline:
+    # gets 20 latest tweets from account's timeline
+    screenName = input("enter screename or user id of twitter user: ")
+    tweets = api.user_timeline(screenName)
+elif args.query:
+    # get tweets from a search
+    searchQuery = input("Enter search query: ")
+    tweets = api.search(searchQuery, 'en', True)
 else:
-    tweets = api.search(args.search, 'en', True)
+    # default to @comp469 timeline
+    tweets = api.home_timeline(None,None,50)
 
-#analyze each tweet from timeline
+
+#analyze each tweet from collection of tweets
 for tweet in tweets:
     entity_sentiment_text(tweet.text)
 
