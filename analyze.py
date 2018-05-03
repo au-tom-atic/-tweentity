@@ -36,7 +36,7 @@ def entity_sentiment_text(text):
         if entity.salience >= 0.3:
             if entity.name in entitiesDict:
                 entitiesDict[entity.name][0] += 1
-                entitiesDict[entity.name][1] = (entitiesDict[entity.name][1] + entity.sentiment.score)
+                entitiesDict[entity.name][1] = (entitiesDict[entity.name][1] + entity.sentiment.score) / entitiesDict[entity.name][0]
             else:
                 entitiesDict[entity.name] = [1, entity.sentiment.score]
 
@@ -73,9 +73,31 @@ else:
 for tweet in tweets:
     entity_sentiment_text(tweet.text)
 
-#find the top mentioned 3 mentioned entities and retweet them w/ sentiment
-#just printing the dictionary rn
+#find the top mentioned mentioned entities and retweet them w/ sentiment
+high = 0
+highKey = ""
+
 print(entitiesDict)
+
+for key, value in entitiesDict.items():
+    if value[0] > high:
+        high = value[0]
+        highKey = key
+
+sentiment = ""
+if entitiesDict[highKey][1] > 0:
+    sentiment = "positive"
+elif entitiesDict[highKey][1] < 0:
+    sentiment = "negative"
+else:
+    sentiment = "neutral"
+
+if args.othertimeline:
+    print("Most popular entity tweeted about by " + screenName + " is " + highKey + ". The overall sentiment is " + sentiment + ".")
+    api.update_status("Most popular entity tweeted about by " + screenName + " is " + highKey + ". The overall sentiment is " + sentiment + ".")
+else:
+    print("Most popular entity tweeted about " + highKey + ". The overall sentiment is " + sentiment + ".")
+    api.update_status("Most popular entity tweeted about " + highKey + ". The overall sentiment is " + sentiment + ".")
 
 
 
