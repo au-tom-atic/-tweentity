@@ -6,7 +6,7 @@ This project is an attempt to analyze sentiment(positive or negative opinion/vie
 
 ### Prerequisites
 * [Python3](https://www.python.org/download/releases/3.0/) 
-* [pip](https://pypi.org/project/pip/)
+* [pip3](https://pypi.org/project/pip/)
 
 In order to run the script(Professor, skip to step 4):
 1. Register your Twitter App, and find your tokens/keys
@@ -14,8 +14,15 @@ In order to run the script(Professor, skip to step 4):
 3. Register your app on Google Cloud, turn on Natural Language API, download JSON file containing your API key
 4. Set envirnoment variable `GOOGLE_APPLICATION_CREDENTIALS` to the path of JSON file containing your Google API key
 5. `pip3 install -r requirements.txt` should install all libraries
-6. `python3 analyze.py -h` for all options
-  
+6. `python3 analyze.py` to run default. optional arguments:
+
+    `-h, --help           show this help message and exit`
+
+    `-q, --query          search for tweets matching a query`
+
+    `-t, --timeline       pull tweets from authenticated user's timeline`
+
+    `-o, --othertimeline  pull tweets from specified timeline`
 
 ## Built With:
 * [Python3](https://www.python.org/download/releases/3.0/) - you know what Python is
