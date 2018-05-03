@@ -62,7 +62,7 @@ entitiesDict = {}
 #parse those inputs
 parser = argparse.ArgumentParser()
 parser.add_argument('-q', '--query', help ="search for tweets matching a query", action = 'store_true')
-parser.add_argument('-t', '--timeline', help ="pull tweets from @comp469 timeline", action ='store_true')
+parser.add_argument('-t', '--timeline', help ="pull tweets from authenticated user's timeline", action ='store_true')
 parser.add_argument('-o', '--othertimeline', help ="pull tweets from specified timeline", action ='store_true')
 args = parser.parse_args()
 
