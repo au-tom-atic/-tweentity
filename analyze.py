@@ -1,6 +1,20 @@
+"""
+COMP 469 - FINAL PROJECT
+Checkout @comp469 on twitter
+
+@comp469 follows a number of twitter accounts who regularly feature NBA content
+We try to analyze who/what these accounts are tweeting about, and how they feel about the subject on average
+You can also search twitter
+or analyze the timeline of a twitter user
+
+see README.md for more instructions
+run 'python3 analyze.py -h' for all options 
+"""
+
+from credentials import *
+
 # Import our Twitter credentials from credentials.py and tweepy
 import tweepy
-from credentials import *
 
 # Imports the Google Cloud client library
 from google.cloud import language
@@ -33,7 +47,9 @@ def entity_sentiment_text(text):
 
     for entity in result.entities:
         #salience measures 'importance' if it Google says something isn't important then ignore it
-        if entity.salience >= 0.3:
+        if entity.salience >= 0.25:
+            print(u'Name: "{}"'.format(entity.name))
+            print(u'Sentiment: {}\n'.format(entity.sentiment.score))
             if entity.name in entitiesDict:
                 entitiesDict[entity.name][0] += 1
                 entitiesDict[entity.name][1] = (entitiesDict[entity.name][1] + entity.sentiment.score) / entitiesDict[entity.name][0]
@@ -58,15 +74,16 @@ api = tweepy.API(auth)
 # user timeline/search/default timeline(@comp469)
 if args.othertimeline:
     # gets 20 latest tweets from account's timeline
-    screenName = input("enter screename or user id of twitter user: ")
-    tweets = api.user_timeline(screenName)
+    userInput = input("enter screename or user id of twitter user: ")
+    tweets = api.user_timeline(userInput)
 elif args.query:
     # get tweets from a search
-    searchQuery = input("Enter search query: ")
-    tweets = api.search(searchQuery, 'en', True)
+    userInput = input("Enter search query: ")
+    tweets = api.search(userInput, 'en', True)
 else:
     # default to @comp469 timeline
     tweets = api.home_timeline(None,None,50)
+    userInput = "@comp469"
 
 
 #analyze each tweet from collection of tweets
@@ -75,29 +92,54 @@ for tweet in tweets:
 
 #find the top mentioned mentioned entities and retweet them w/ sentiment
 high = 0
-highKey = ""
+highKeys = []
 
 print(entitiesDict)
 
 for key, value in entitiesDict.items():
     if value[0] > high:
+        #new high occurance
         high = value[0]
-        highKey = key
+        highKeys.clear()
+        highKeys.append(key)
+    elif value[0] == high:
+        #matches # of occurences
+        high = value[0]
+        highKeys.append(key)
 
-sentiment = ""
-if entitiesDict[highKey][1] > 0:
-    sentiment = "positive"
-elif entitiesDict[highKey][1] < 0:
-    sentiment = "negative"
-else:
-    sentiment = "neutral"
+print("top entities: \n")
+print(highKeys)
 
-if args.othertimeline:
-    print("Most popular entity tweeted about by " + screenName + " is " + highKey + ". The overall sentiment is " + sentiment + ".")
-    api.update_status("Most popular entity tweeted about by " + screenName + " is " + highKey + ". The overall sentiment is " + sentiment + ".")
-else:
-    print("Most popular entity tweeted about " + highKey + ". The overall sentiment is " + sentiment + ".")
-    api.update_status("Most popular entity tweeted about " + highKey + ". The overall sentiment is " + sentiment + ".")
+for key in highKeys:
+    sentiment = ""
+    if entitiesDict[key][1] == 0.0:
+        sentiment = "neutrally"
+    elif entitiesDict[key][1] > 0:
+        if entitiesDict[key][1] < 0.25:
+            sentiment = "slightly positively"
+        elif entitiesDict[key][1] < 0.75:
+            sentiment = "positively"
+        else:
+            sentiment = "very positively"
+    elif entitiesDict[key][1] < 0:
+        if entitiesDict[key][1] > -0.25:
+            sentiment = "slightly negatively"
+        elif entitiesDict[key][1] > -0.75:
+            sentiment = "negatively"
+        else:
+            sentiment = "very negatively"
+    if args.othertimeline:
+        print("Analysis shows that " + userInput + " is tweeting about " + key + " " + sentiment)
+        api.update_status("Analysis shows that " + userInput + " is tweeting about " + key + " " + sentiment)
+    elif args.query:
+        print("Search results for " + userInput + " show that " + key + " is trending " + sentiment)
+        #dont want to retweet search results
+        #api.update_status("Search results for " + userInput + " show that " + key + " is trending " + sentiment)
+    else:
+        print("Anaylsis shows that my timeline is tweeting about " + key + " " + sentiment)
+        api.update_status("Anaylsis shows that my timeline is tweeting about " + key + " " + sentiment)
+
+
 
 
 
